@@ -1,0 +1,36 @@
+---
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      ARTIFACTORY_URL: 'https://artifactory.cloud.mmst.eu/artifactory'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17.0.7'
+          cache: gradle
+
+      - name: Validate gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Build
+        run: >
+          ./gradlew build -i 
+          -PartifactoryUser=${{ secrets.CLP_ARTIFACTORY_SVCACC_USERNAME }}
+          -PartifactoryPassword=${{ secrets.CLP_ARTIFACTORY_SVCACC_APIKEY }}
+          -PartifactoryUrl=${{ env.ARTIFACTORY_URL }}
